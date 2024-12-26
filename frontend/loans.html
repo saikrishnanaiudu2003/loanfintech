@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Application & Status</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        .container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .loan-form, .loan-status {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .loan-form input, .loan-form textarea {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .loan-form button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .loan-form button:hover {
+            background-color: #0056b3;
+        }
+
+        .status-info {
+            background-color: #f9f9f9;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 8px;
+        }
+
+        .status-info p {
+            margin: 5px 0;
+        }
+
+        .status-info.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="section loan-application">
+        <h2>Apply for a Loan</h2>
+        <div class="loan-form">
+            <input type="number" id="loanAmount" placeholder="Loan Amount" required>
+            <textarea id="loanPurpose" placeholder="Loan Purpose" required></textarea>
+            <button onclick="applyLoan()">Apply</button>
+        </div>
+    </div>
+
+    <div class="section loan-status">
+        <h2>Check Loan Status</h2>
+        <div id="loanStatus" class="loan-status"></div>
+        <button onclick="getLoanStatus()">Check Status</button>
+    </div>
+</div>
+
+<script>
+    // Function to apply for a loan
+  // Function to apply for a loan
+function applyLoan() {
+    const token = localStorage.getItem('access_token'); // Get token from local storage
+    const loanAmount = document.getElementById('loanAmount').value;
+    const loanPurpose = document.getElementById('loanPurpose').value;
+
+    if (!token) {
+        alert("You must be logged in to apply for a loan.");
+        window.location.href = "login.html"; // Redirect to login page if not logged in
+        return;
+    }
+
+    if (!loanAmount || !loanPurpose) {
+        alert("Please fill in all the fields.");
+        return;
+    }
+
+    fetch("http://127.0.0.1:8000/loans/apply", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}` // Pass token in Authorization header
+        },
+        body: JSON.stringify({
+            loan_amount: loanAmount,
+            loan_purpose: loanPurpose
+        }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === "pending") {
+            alert("Loan application submitted successfully!");
+            // Clear form inputs
+            document.getElementById('loanAmount').value = '';
+            document.getElementById('loanPurpose').value = '';
+        } else {
+            alert("Error applying for loan.");
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        alert("Failed to apply for loan.");
+    });
+}
+
+
+    // Function to check loan status
+    function getLoanStatus() {
+        const token = localStorage.getItem('access_token'); // Get token from local storage
+        if (!token) {
+            alert("You must be logged in to check your loan status.");
+            window.location.href = "login.html"; // Redirect to login page if not logged in
+            return;
+        }
+
+       // Function to check loan status
+function getLoanStatus() {
+    const token = localStorage.getItem('access_token'); // Get token from local storage
+    if (!token) {
+        alert("You must be logged in to check your loan status.");
+        window.location.href = "login.html"; // Redirect to login page if not logged in
+        return;
+    }
+
+    fetch("http://127.0.0.1:8000/loans/status", {
+        method: "GET",
+        headers: {
+            "Authorization": `Bearer ${token}` // Pass token in Authorization header
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const statusContainer = document.getElementById('loanStatus');
+        if (data.detail) {
+            statusContainer.innerHTML = `<div class="status-info error"><p>${data.detail}</p></div>`;
+        } else {
+            const loanDetails = `
+                <div class="status-info">
+                    <p><strong>Loan Amount:</strong> $${data.loan_amount}</p>
+                    <p><strong>Loan Purpose:</strong> ${data.loan_purpose}</p>
+                    <p><strong>Status:</strong> ${data.status}</p>
+                    <p><strong>Applied At:</strong> ${new Date(data.applied_at).toLocaleString()}</p>
+                </div>
+            `;
+            statusContainer.innerHTML = loanDetails;
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+        document.getElementById('loanStatus').innerHTML = "<div class='status-info error'><p>Failed to fetch loan status. Please try again later.</p></div>";
+    });
+
+}
+    }
+</script>
+
+</body>
+</html>
